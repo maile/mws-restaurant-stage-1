@@ -3,3 +3,8 @@
 #map {
   height: 800px;
 }
+
+/* ====================== Restaurant Filtering ====================== */
+.filter-options {
+  height: 85px;
+}

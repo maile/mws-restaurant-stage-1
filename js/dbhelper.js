@@ -175,7 +175,7 @@ class DBHelper {
             (max-width: 600px) 600px,
             400px`;
   }
-  
+
   /**
    * Map marker for a restaurant.
    */
@@ -200,4 +200,11 @@ class DBHelper {
     return marker;
   } */
 
+  static mapOffline() {
+    const map = document.getElementById('map');
+    map.className = "map-offline";
+    map.innerHTML = `<div class="warning-icon">!</div>
+    <div class="warning-message">Problems loading map</div>
+    <div class="warning-suggestion">Offline? Please check back later when back on network.</div>`;
+  }
 }

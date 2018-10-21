@@ -63,6 +63,12 @@ self.addEventListener('fetch', function(event) {
       event.respondWith(caches.match('/restaurant.html'));
       return; // Done handling request, so exit early.
     }
+
+    // If the request pathname starts with /img, then we need to handle images.
+    if (requestUrl.pathname.startsWith('/img')) {
+      event.respondWith(serveImage(event.request));
+      return; // Done handling request, so exit early.
+    }
   }
 
   // Default behavior: respond with cached elements, if any, falling back to network.
@@ -72,3 +78,22 @@ self.addEventListener('fetch', function(event) {
     })
   );
 });
+
+function serveImage(request) {
+  let imageStorageUrl = request.url;
+
+  // Make a new URL with a stripped suffix and extension from the request url
+  // i.e. /img/1-medium.jpg  will become  /img/1
+  // we'll use this as the KEY for storing image into cache
+  imageStorageUrl = imageStorageUrl.replace(/-small\.\w{3}|-medium\.\w{3}|-large\.\w{3}/i, '');
+
+  return caches.open(contentImgsCache).then(function(cache) {
+    return cache.match(imageStorageUrl).then(function(response) {
+      // if image is in cache, return it, else fetch from network, cache a clone, then return network response
+      return response || fetch(request).then(function(networkResponse) {
+        cache.put(imageStorageUrl, networkResponse.clone());
+        return networkResponse;
+      });
+    });
+  });
+}

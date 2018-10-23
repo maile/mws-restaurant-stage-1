@@ -16,8 +16,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
      if (error) { // Got an error!
        console.error(error);
      } else {
-       if (navigator.onLine) {
-         try {
            self.newMap = L.map('map', {
              center: [restaurant.latlng.lat, restaurant.latlng.lng],
              zoom: 16,
@@ -31,16 +29,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
                'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
              id: 'mapbox.streets'
            }).addTo(newMap);
-           DBHelper.mapMarkerForRestaurant(self.restaurant, self.newMap);
-         } catch(error) {
-           console.log("Map couldn't be initialized", error);
-           // If an error occurred while trying to initialize the map, set map as offline
-           DBHelper.mapOffline();
-         }
-       } else {
-         //  If app detects we're offline, set map as offline
-         DBHelper.mapOffline();
-       }
 
        fillBreadcrumb();
      }

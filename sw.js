@@ -1,99 +1,114 @@
-const appName = "mws-restaurant-stage-1"
-const staticCacheName = appName + "-v1.0";
+var cacheID = "mws-restaurant-stage-1";
 
-const contentImgsCache = appName + "-images";
-
-var allCaches = [
-  staticCacheName,
-  contentImgsCache
+const cacheFiles = [
+  "/",
+  "/index.html",
+  "/restaurant.html",
+  "/css/styles.css",
+  "/css/styles-medium.css",
+  "/css/styles-large.css",
+  "/data/restaurants.json",
+  "/js/",
+  "/js/dbhelper.js",
+  "/js/secret.js",
+  "/js/main.js",
+  "/js/restaurant_info.js",
+  "/js/register.js",
+  "/img/1-large.jpg",
+  "/img/1-medium.jpg",
+  "/img/1-small.jpg",
+  "/img/2-large.jpg",
+  "/img/2-medium.jpg",
+  "/img/2-small.jpg",
+  "/img/3-large.jpg",
+  "/img/3-medium.jpg",
+  "/img/3-small.jpg",
+  "/img/4-large.jpg",
+  "/img/4-medium.jpg",
+  "/img/4-small.jpg",
+  "/img/5-large.jpg",
+  "/img/5-medium.jpg",
+  "/img/5-small.jpg",
+  "/img/6-large.jpg",
+  "/img/6-medium.jpg",
+  "/img/6-small.jpg",
+  "/img/7-large.jpg",
+  "/img/7-medium.jpg",
+  "/img/7-small.jpg",
+  "/img/8-large.jpg",
+  "/img/8-medium.jpg",
+  "/img/8-small.jpg",
+  "/img/9-large.jpg",
+  "/img/9-medium.jpg",
+  "/img/9-small.jpg",
+  "/img/10-large.jpg",
+  "/img/10-medium.jpg",
+  "/img/10-small.jpg"
 ];
 
-/** At Service Worker Install time, cache all static assets */
-self.addEventListener('install', function(event) {
+self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(staticCacheName).then(function(cache) {
-      return cache.addAll([
-        '/', // this caches index.html
-        '/restaurant.html',
-        '/css/styles.css',
-        '/css/styles-medium.css',
-        '/css/styles-large.css',
-        // add other css files here if you followed the mobile first approach
-        '/js/dbhelper.js',
-        '/js/secret.js',
-        '/js/main.js',
-        '/js/restaurant_info.js',
-        'js/register-sw.js', // In the video I forgot to add this newly created file
-        'data/restaurants.json'
-        // add other static assets here like logos, svg icons or any
-        // other asset needed for your app UI
-        // (Don't add restaurant images, as they are not part of your
-        // application's UI)
-      ]);
+    caches.open(cacheID).then(cache => {
+      return cache.addAll(cacheFiles);
     })
+      .catch(error => {
+        console.log("Caches open failed: " + error);
+      })
   );
 });
 
-/** At Service Worker Activation, Delete previous caches, if any */
-self.addEventListener('activate', function(event) {
-  event.waitUntil(
-    caches.keys().then(function(cacheNames) {
-      return Promise.all(
-        cacheNames.filter(function(cacheName) {
-          return cacheName.startsWith(appName) &&
-                 !allCaches.includes(cacheName);
-        }).map(function(cacheName) {
-          return caches.delete(cacheName);
-        })
+/* test without
+self.addEventListener("fetch", event => {
+  let cacheRequest = event.request;
+  let cacheUrlObj = new URL(event.request.url);
+  if (event.request.url.indexOf("restaurant.html") > -1) {
+    const cacheURL = "restaurant.html";
+    cacheRequest = new Request(cacheURL);
+  }
+  if (cacheUrlObj.hostname !== "localhost") {
+    event.request.mode = "no-cors";
+  }
+
+  event.respondWith(
+    caches.match(cacheRequest).then(response => {
+      return {
+        response ||
+        fetch(event.request)
+          .then(fetchResponse => {
+            return caches.open(cacheID).then(cache => {
+              cache.put(event.request, fetchResponse.clone());
+              return fetchResponse;
+            });
+          })
+          .catch(error => {
+            console.log("Not connected to internet");
+          })
       );
     })
   );
 });
+*/
 
-/** Hijack fetch requests and respond accordingly */
-self.addEventListener('fetch', function(event) {
-  const requestUrl = new URL(event.request.url);
-
-  // only highjack request made to our app (not mapbox maps or leaflet, for example)
-  if (requestUrl.origin === location.origin) {
-
-    // Since requests made to restaurant.html have search params (like ?id=1), the url can't be used as the
-    // key to access the cache, so just respondWith restaurant.html if pathname startsWith '/restaurant.html'
-    if (requestUrl.pathname.startsWith('/restaurant.html')) {
-      event.respondWith(caches.match('/restaurant.html'));
-      return; // Done handling request, so exit early.
-    }
-
-    // If the request pathname starts with /img, then we need to handle images.
-    if (requestUrl.pathname.startsWith('/img')) {
-      event.respondWith(serveImage(event.request));
-      return; // Done handling request, so exit early.
-    }
-  }
-
-  // Default behavior: respond with cached elements, if any, falling back to network.
-  event.respondWith(
-    caches.match(event.request).then(function(response) {
-      return response || fetch(event.request);
+self.addEventListener('fetch',function(evt) {
+  evt.respondWith(
+    caches.match(evt.request).then(function (response) {
+      if (response) {
+        console.log(`Found ${evt.request} in cache`);
+        return response;
+      } else {
+        console.log(`Could not find ${evt.request} in cache, FETCHING!`);
+        return fetch(evt.request)
+          .then(function (response) {
+            const clonedResponse = response.clone();
+            caches.open(cacheID).then(function (cache) {
+              cache.put(evt.request, clonedResponse);
+            })
+            return response;
+          })
+          .catch(function (error) {
+            console.log(`Failed to with: ${error}`);
+          });
+      }
     })
   );
 });
-
-function serveImage(request) {
-  let imageStorageUrl = request.url;
-
-  // Make a new URL with a stripped suffix and extension from the request url
-  // i.e. /img/1-medium.jpg  will become  /img/1
-  // we'll use this as the KEY for storing image into cache
-  imageStorageUrl = imageStorageUrl.replace(/-small\.\w{3}|-medium\.\w{3}|-large\.\w{3}/i, '');
-
-  return caches.open(contentImgsCache).then(function(cache) {
-    return cache.match(imageStorageUrl).then(function(response) {
-      // if image is in cache, return it, else fetch from network, cache a clone, then return network response
-      return response || fetch(request).then(function(networkResponse) {
-        cache.put(imageStorageUrl, networkResponse.clone());
-        return networkResponse;
-      });
-    });
-  });
-}

@@ -72,8 +72,6 @@ fillCuisinesHTML = (cuisines = self.cuisines) => {
  * Initialize leaflet map, called from HTML.
  */
  initMap = () => {
-  if (navigator.onLine) {
-    try {
       self.newMap = L.map('map', {
         center: [40.722216, -73.987501],
         zoom: 12,
@@ -87,15 +85,6 @@ fillCuisinesHTML = (cuisines = self.cuisines) => {
           'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
         id: 'mapbox.streets'
       }).addTo(newMap);
-    } catch(error) {
-      console.log("Map couldn't be initialized", error);
-      // If an error occurred while trying to initialize the map, set map as offline
-      DBHelper.mapOffline();
-    }
-  } else {
-    // If app detects we're offline, set map as offline
-    DBHelper.mapOffline();
-  }
 
   updateRestaurants();
 }
@@ -202,8 +191,6 @@ createRestaurantHTML = (restaurant) => {
  * Add markers for current restaurants to the map.
  */
 addMarkersToMap = (restaurants = self.restaurants) => {
-  // if either newMap or L (leaflet) aren't defined exit early.
-  if (!newMap || !L) return;
   restaurants.forEach(restaurant => {
     // Add marker to the map
     const marker = DBHelper.mapMarkerForRestaurant(restaurant, self.newMap);
